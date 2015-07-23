@@ -13,17 +13,16 @@
             $Credential
         )
     
-    Write-Progress -Activity "Connecting to Tenant" -Status "Connecting to ECP" -Id 506 -PercentComplete 25
+    Write-Progress -Activity 'Connecting to Tenant' -Status 'Connecting to ECP' -Id 506 -PercentComplete 25
     $session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $Credential -Authentication Basic -AllowRedirection
     Import-Module (Import-PSSession $session) -Global
 
-    Write-Progress -Activity "Connecting to Tenant" -Status "Connecting to MSOL" -Id 506 -PercentComplete 75
+    Write-Progress -Activity 'Connecting to Tenant' -Status 'Connecting to MSOL' -Id 506 -PercentComplete 75
     Connect-MsolService -Credential $Credential
 
-    Write-Progress -Activity "Connecting to Tenant" -Status "Connected" -Id 506 -PercentComplete 100
+    Write-Progress -Activity 'Connecting to Tenant' -Status 'Connected' -Id 506 -PercentComplete 100
 
-    $companyName = Get-MsolPartnerInformation | Select-Object PartnerCompanyName
-    [Console]::Title = $companyName.PartnerCompanyName
+    [Console]::Title = Get-MsolCompanyName
 }
 
 Function Connect-ECP()
@@ -98,7 +97,7 @@ Function Get-UserDelegatePermission()
 
     $users = @()
 
-    Write-Progress -Activity "Searching Mailboxes" -Status "Getting Mailboxes" -PercentComplete 0
+    Write-Progress -Activity 'Searching Mailboxes' -Status 'Getting Mailboxes' -PercentComplete 0
     $mailboxes = Get-Mailbox
     $iterator = 1
 
@@ -106,7 +105,7 @@ Function Get-UserDelegatePermission()
     {
         $users = $users + ($mailbox | Get-MailboxPermission | Where-Object { $_.User -like "*$User*" })
         
-        Write-Progress -Activity "Searching Mailboxes" -Status "Mailbox [$iterator/$($mailboxes.Count)]: $mailbox" -PercentComplete (($iterator/$mailboxes.Count) * 100)
+        Write-Progress -Activity 'Searching Mailboxes' -Status "Mailbox [$iterator/$($mailboxes.Count)]: $mailbox" -PercentComplete (($iterator/$mailboxes.Count) * 100)
         $iterator++
     }
 
@@ -121,13 +120,13 @@ Function Convert-MailboxToSharedMailbox()
         $Identity
     )
 
-    Write-Progress -Activity "Convert Mailbox to Shared Mailbox" -Status "Converting Mailbox" -Id 507 -PercentComplete 33
+    Write-Progress -Activity 'Convert Mailbox to Shared Mailbox' -Status 'Converting Mailbox' -Id 507 -PercentComplete 33
     Set-Mailbox $Identity -Type shared -ProhibitSendReceiveQuota 10GB -ProhibitSendQuota 9.5GB -IssueWarningQuota 9GB
 
-    Write-Progress -Activity "Convert Mailbox to Shared Mailbox" -Status "Getting existing license" -Id 507 -PercentComplete 66
+    Write-Progress -Activity 'Convert Mailbox to Shared Mailbox' -Status 'Getting existing license' -Id 507 -PercentComplete 66
     $license = Get-MsolUser -UserPrincipalName $Identity | Select-Object -ExpandProperty Licenses
 
-    Write-Progress -Activity "Convert Mailbox to Shared Mailbox" -Status "Removing license" -Id 507 -PercentComplete 99
+    Write-Progress -Activity 'Convert Mailbox to Shared Mailbox' -Status 'Removing license' -Id 507 -PercentComplete 99
     Set-MsolUserLicense -UserPrincipalName $Identity -RemoveLicenses $license.AccountSkuId
 }
 
@@ -140,7 +139,7 @@ Function New-BulkMsolUser()
 
         [Parameter(Position=2)]
         [String]
-        $TenantId = "",
+        $TenantId = '',
 
         [Parameter(Position=3)]
         [Boolean]
@@ -171,6 +170,24 @@ Function New-BulkMsolUser()
         }
     }
 }
+
+Function Get-MsolCompanyName()
+{
+    return (Get-MsolPartnerInformation | Select-Object PartnerCompanyName).PartnerCompanyName
+}
+
+Function Get-TenantVersion()
+{
+    <#
+    .SYNOPSIS
+    Gets tenant version information.
+
+    .DESCRIPTION
+    Gets the previous and current Admin version, Exchange version and RBAC version .
+    #>
+    return Get-OrganizationConfig | Select-Object PreviousAdminDisplayVersion, AdminDisplayVersion, ExchangeVersion, RBACConfigurationVersion
+}
+
 
 # Set Aliases
 Set-Alias cctn Connect-Tenant -Scope Global
