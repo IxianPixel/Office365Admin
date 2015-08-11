@@ -158,20 +158,78 @@ Function New-BulkMsolUser()
     {
         If ($TenantId)
         {
-            New-MsolUser -DisplayName $user.DisplayName -UserPrincipalName $user.UserPrincipalName -FirstName $user.FirstName -LastName $user.LastName -LicenseAssignment $user.LicenseAssignment -UsageLocation $user.UsageLocation -PasswordNeverExpires $PasswordNeverExpires -TenantId $TenantId
-
-            Set-MsolUserPassword -UserPrincipalName $user.UserPrincipalName -NewPassword $user.PasswordString -ForceChangePassword $ForcePasswordChange -TenantId $TenantId
-
-            Set-MsolUserLicense -UserPrincipalName $user.UserPrincipalName -AddLicenses $user.LicenseAssignment -TenantId $TenantId
+            New-SimpleMsolUser -DisplayName $user.DisplayName -FirstName $user.FirstName -LastName $user.LastName `
+            -UserPrincipalName $user.UserPrincipalName -PasswordString $user.PasswordString -LicenseAssignment $user.LicenseAssignment `
+            -UsageLocation $user.UsageLocation -ForcePasswordChange $ForcePasswordChange -PasswordNeverExpires $PasswordNeverExpires -TenantId $TenantId
         }
         Else
         {
-            New-MsolUser -DisplayName $user.DisplayName -UserPrincipalName $user.UserPrincipalName -FirstName $user.FirstName -LastName $user.LastName -UsageLocation $user.UsageLocation -PasswordNeverExpires $PasswordNeverExpires
-
-            Set-MsolUserPassword -UserPrincipalName $user.UserPrincipalName -NewPassword $user.PasswordString -ForceChangePassword $ForcePasswordChange
-
-            Set-MsolUserLicense -UserPrincipalName $user.UserPrincipalName -AddLicenses $user.LicenseAssignment 
+            New-SimpleMsolUser -DisplayName $user.DisplayName -FirstName $user.FirstName -LastName $user.LastName `
+            -UserPrincipalName $user.UserPrincipalName -PasswordString $user.PasswordString -LicenseAssignment $user.LicenseAssignment `
+            -UsageLocation $user.UsageLocation -ForcePasswordChange $ForcePasswordChange -PasswordNeverExpires $PasswordNeverExpires
         }
+    }
+}
+
+Function New-SimpleMsolUser()
+{
+    Param(
+        [parameter(Mandatory=$true, Position=1)]
+        [String]
+        $DisplayName,
+
+        [parameter(Mandatory=$true, Position=2)]
+        [String]
+        $FirstName,
+
+        [parameter(Mandatory=$true, Position=3)]
+        [String]
+        $LastName,
+
+        [parameter(Mandatory=$true, Position=4)]
+        [String]
+        $UserPrincipalName,
+
+        [parameter(Mandatory=$true, Position=5)]
+        [String]
+        $PasswordString,
+
+        [parameter(Mandatory=$true, Position=6)]
+        [String]
+        $LicenseAssignment,
+
+        [parameter(Mandatory=$true, Position=7)]
+        [String]
+        $UsageLocation,
+
+        [Parameter(Position=2)]
+        [String]
+        $TenantId = '',
+
+        [Parameter(Position=3)]
+        [Boolean]
+        $ForcePasswordChange = $false,
+
+        [Parameter(Position=4)]
+        [Boolean]
+        $PasswordNeverExpires = $true
+    )
+
+    If ($TenantId)
+    {
+        New-MsolUser -DisplayName $DisplayName -UserPrincipalName $UserPrincipalName -FirstName $FirstName -LastName $LastName -LicenseAssignment $LicenseAssignment -UsageLocation $UsageLocation -PasswordNeverExpires $PasswordNeverExpires -TenantId $TenantId
+
+        Set-MsolUserPassword -UserPrincipalName $UserPrincipalName -NewPassword $PasswordString -ForceChangePassword $ForcePasswordChange -TenantId $TenantId
+
+        Set-MsolUserLicense -UserPrincipalName $UserPrincipalName -AddLicenses $LicenseAssignment -TenantId $TenantId
+    }
+    Else
+    {
+        New-MsolUser -DisplayName $DisplayName -UserPrincipalName $UserPrincipalName -FirstName $FirstName -LastName $LastName -LicenseAssignment $LicenseAssignment -UsageLocation $UsageLocation -PasswordNeverExpires $PasswordNeverExpires
+
+        Set-MsolUserPassword -UserPrincipalName $UserPrincipalName -NewPassword $PasswordString -ForceChangePassword $ForcePasswordChange
+
+        Set-MsolUserLicense -UserPrincipalName $UserPrincipalName -AddLicenses $LicenseAssignment
     }
 }
 
