@@ -1,4 +1,7 @@
-﻿Function Connect-Tenant()
+﻿New-Variable -Name tenantConnected -Value $false -Scope Script
+New-Variable -Name msolCompanyName -Value '' -Scope Script
+
+Function Connect-Tenant()
 {
     <#
     .SYNOPSIS
@@ -22,6 +25,7 @@
 
     Write-Progress -Activity 'Connecting to Tenant' -Status 'Connected' -Id 506 -PercentComplete 100
 
+    $script:tenantConnected = $true
     [Console]::Title = Get-MsolCompanyName
 }
 
@@ -173,7 +177,12 @@ Function New-BulkMsolUser()
 
 Function Get-MsolCompanyName()
 {
-    return (Get-MsolPartnerInformation | Select-Object PartnerCompanyName).PartnerCompanyName
+    If ($script:tenantConnected -eq $true -and $script:msolCompanyName -eq '')
+    {
+        $script:msolCompanyName = (Get-MsolPartnerInformation -ErrorAction SilentlyContinue | Select-Object PartnerCompanyName).PartnerCompanyName
+    }
+
+    return $script:msolCompanyName
 }
 
 Function Get-TenantVersion()
@@ -188,6 +197,15 @@ Function Get-TenantVersion()
     return Get-OrganizationConfig | Select-Object PreviousAdminDisplayVersion, AdminDisplayVersion, ExchangeVersion, RBACConfigurationVersion
 }
 
+Function Get-MsolPrompt()
+{
+    If ($script:tenantConnected -eq $true)
+    {
+        Write-Host ' [' -nonewline -foregroundcolor DarkGray
+        Write-Host "O365 - $script:msolCompanyName" -nonewline -foregroundcolor Cyan
+        Write-Host ']' -nonewline -foregroundcolor DarkGray
+    }
+}
 
 # Set Aliases
 Set-Alias cctn Connect-Tenant -Scope Global
